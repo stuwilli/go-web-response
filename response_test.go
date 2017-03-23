@@ -15,7 +15,7 @@ func TestNewResponse_WithData(t *testing.T) {
 		"Test2": "This is test two",
 	}
 
-	r := NewResponse(200, data, nil)
+	r := NewResponse(200).SetData(data).AddError(errors.New("ddd"))
 
 	if len(r.Data.(map[string]string)) != 2 {
 		t.Error("Expected 2 data attributes")
@@ -28,7 +28,7 @@ func TestNewResponse_WithData(t *testing.T) {
 
 func TestNewResponse_WithError(t *testing.T) {
 
-	r := NewResponse(http.StatusBadRequest, nil, errors.New("Test"))
+	r := NewResponse(http.StatusBadRequest).AddError(errors.New("Test"))
 
 	if len(r.Errors) != 1 {
 		t.Error("Expected there to be 1 error")
@@ -38,7 +38,7 @@ func TestNewResponse_WithError(t *testing.T) {
 //TestAddError ...
 func TestAddError(t *testing.T) {
 
-	r := NewResponse(200, nil, nil)
+	r := NewResponse(200)
 
 	r.AddError(errors.New("Test"))
 
@@ -59,7 +59,7 @@ func TestAddError(t *testing.T) {
 
 func TestAddNamedError(t *testing.T) {
 
-	r := NewResponse(200, nil, nil)
+	r := NewResponse(200)
 
 	r.AddNamedError("test", errors.New("Test"))
 
@@ -79,7 +79,7 @@ func TestWriteJSON(t *testing.T) {
 		"Test2": "This is test two",
 	}
 
-	r := NewResponse(200, data, errors.New("Test"))
+	r := NewResponse(200).SetData(data).AddError(errors.New("Test"))
 	r.Timestamp = 1
 	w := fakeresponse.NewFakeResponse(t)
 	r.WriteJSON(w)

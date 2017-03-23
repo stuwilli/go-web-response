@@ -30,24 +30,16 @@ type Pageable struct {
 }
 
 //NewResponse ....
-func NewResponse(statusCode int, data interface{}, err error) Response {
+func NewResponse(statusCode int) Response {
 
 	status := Status{StatusCode: statusCode, Message: http.StatusText(statusCode)}
 	resp := Response{Status: status, Timestamp: time.Now().Unix()}
-
-	if data != nil {
-		resp.Data = data
-	}
-
-	if err != nil {
-		resp.AddError(err)
-	}
 
 	return resp
 }
 
 //AddError ....
-func (r *Response) AddError(err error) {
+func (r Response) AddError(err error) *Response {
 
 	if r.Errors == nil {
 		r.Errors = make(map[string]string)
@@ -55,16 +47,27 @@ func (r *Response) AddError(err error) {
 
 	count := len(r.Errors) + 1
 	r.Errors[fmt.Sprintf("error_%v", count)] = err.Error()
+
+	return &r
 }
 
 //AddNamedError ...
-func (r *Response) AddNamedError(name string, err error) {
+func (r *Response) AddNamedError(name string, err error) *Response {
 
 	if r.Errors == nil {
 		r.Errors = make(map[string]string)
 	}
 
 	r.Errors[name] = err.Error()
+
+	return r
+}
+
+//SetData ...
+func (r Response) SetData(data interface{}) *Response {
+
+	r.Data = data
+	return &r
 }
 
 //MarshalJSON ...
