@@ -2,6 +2,7 @@ package webresponse
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -16,6 +17,9 @@ type Status struct {
 type ResponseBuilder interface {
 	Status(int) ResponseBuilder
 	Data(interface{}) ResponseBuilder
+	Errors(interface{}) ResponseBuilder
+	Error(error) ResponseBuilder
+	NamedError(string, string) ResponseBuilder
 	Build() Response
 }
 
@@ -30,12 +34,12 @@ type Response struct {
 type responseBuilder struct {
 	status int
 	data   interface{}
-	Errors interface{}
+	errors interface{}
 }
 
 //NewBuilder ...
 func NewBuilder() ResponseBuilder {
-	return &responseBuilder{}
+	return &responseBuilder{status: 200}
 }
 
 //MarshalJSON ...
@@ -64,8 +68,52 @@ func (r *responseBuilder) Status(s int) ResponseBuilder {
 	return r
 }
 
+func (r *responseBuilder) Errors(e interface{}) ResponseBuilder {
+
+	switch e.(type) {
+
+	case error:
+		r.Error(e.(error))
+
+	default:
+		r.errors = e
+	}
+
+	return r
+}
+
+func (r *responseBuilder) checkAndInitErrors() int {
+
+	_, ok := r.errors.(map[string]string)
+
+	if r.errors == nil || !ok {
+		r.errors = make(map[string]string)
+	}
+
+	return len(r.errors.(map[string]string)) + 1
+}
+
+func (r *responseBuilder) Error(e error) ResponseBuilder {
+
+	count := r.checkAndInitErrors()
+
+	r.NamedError(fmt.Sprintf("error_%v", count), e.Error())
+
+	return r
+}
+
+func (r *responseBuilder) NamedError(k string, v string) ResponseBuilder {
+
+	r.checkAndInitErrors()
+
+	r.errors.(map[string]string)[k] = v
+
+	return r
+}
+
 func (r *responseBuilder) Build() Response {
 
 	status := Status{StatusCode: r.status, Message: http.StatusText(r.status)}
-	return Response{Status: status, Data: r.data, Timestamp: time.Now().Unix()}
+	return Response{Status: status, Data: r.data, Errors: r.errors,
+		Timestamp: time.Now().Unix()}
 }
