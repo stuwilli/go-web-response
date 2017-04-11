@@ -2,9 +2,7 @@ package webresponse
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 )
 
 //Status ...
@@ -14,57 +12,35 @@ type Status struct {
 }
 
 //Response  ....
+// type Response interface {
+// 	WriteJSON(w http.ResponseWriter)
+// 	marshalJSON() []byte
+// }
+
+//ResponseBuilder ...
+type ResponseBuilder interface {
+	SetStatus(int) ResponseBuilder
+	SetData(interface{}) ResponseBuilder
+	Build() Response
+}
+
+//Response ...
 type Response struct {
 	Status
-	Timestamp int64             `json:"timestamp"`
-	Data      interface{}       `json:"data,omitempty"`
-	Errors    map[string]string `json:"errors,omitempty"`
-	Pageable  *Pageable         `json:"pageable,omitempty"`
+	Timestamp int64       `json:"timestamp"`
+	Data      interface{} `json:"data,omitempty"`
+	Errors    interface{} `json:"errors,omitempty"`
 }
 
-//Pageable ....
-type Pageable struct {
-	Current int `json:"current,omitempty"`
-	Total   int `json:"total,omitempty"`
-	PerPage int `json:"perPage,omitempty"`
+type responseBuilder struct {
+	Status int
+	Data   interface{}
+	Errors interface{}
 }
 
-//NewResponse ....
-func NewResponse(statusCode int, data interface{}, err error) Response {
-
-	status := Status{StatusCode: statusCode, Message: http.StatusText(statusCode)}
-	resp := Response{Status: status, Timestamp: time.Now().Unix()}
-
-	if data != nil {
-		resp.Data = data
-	}
-
-	if err != nil {
-		resp.AddError(err)
-	}
-
-	return resp
-}
-
-//AddError ....
-func (r *Response) AddError(err error) {
-
-	if r.Errors == nil {
-		r.Errors = make(map[string]string)
-	}
-
-	count := len(r.Errors) + 1
-	r.Errors[fmt.Sprintf("error_%v", count)] = err.Error()
-}
-
-//AddNamedError ...
-func (r *Response) AddNamedError(name string, err error) {
-
-	if r.Errors == nil {
-		r.Errors = make(map[string]string)
-	}
-
-	r.Errors[name] = err.Error()
+//NewBuilder ...
+func NewBuilder() ResponseBuilder {
+	return &responseBuilder{}
 }
 
 //MarshalJSON ...
@@ -81,4 +57,20 @@ func (r *Response) WriteJSON(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(r.StatusCode)
 	w.Write(r.marshalJSON())
+}
+
+func (r *responseBuilder) SetData(d interface{}) ResponseBuilder {
+	r.Data = d
+	return r
+}
+
+func (r *responseBuilder) SetStatus(s int) ResponseBuilder {
+	r.Status = s
+	return r
+}
+
+func (r *responseBuilder) Build() Response {
+
+	status := Status{StatusCode: r.Status, Message: http.StatusText(r.Status)}
+	return Response{Status: status, Data: r.Data}
 }
