@@ -15,7 +15,7 @@ func TestNewResponse_WithData(t *testing.T) {
 
 	b := NewBuilder()
 
-	r := b.SetStatus(200).SetData(x).Build()
+	r := b.Status(200).Data(x).Build()
 
 	fmt.Println(string(r.marshalJSON()))
 

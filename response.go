@@ -3,6 +3,7 @@ package webresponse
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 //Status ...
@@ -11,16 +12,10 @@ type Status struct {
 	Message    string `json:"message"`
 }
 
-//Response  ....
-// type Response interface {
-// 	WriteJSON(w http.ResponseWriter)
-// 	marshalJSON() []byte
-// }
-
 //ResponseBuilder ...
 type ResponseBuilder interface {
-	SetStatus(int) ResponseBuilder
-	SetData(interface{}) ResponseBuilder
+	Status(int) ResponseBuilder
+	Data(interface{}) ResponseBuilder
 	Build() Response
 }
 
@@ -33,8 +28,8 @@ type Response struct {
 }
 
 type responseBuilder struct {
-	Status int
-	Data   interface{}
+	status int
+	data   interface{}
 	Errors interface{}
 }
 
@@ -59,18 +54,18 @@ func (r *Response) WriteJSON(w http.ResponseWriter) {
 	w.Write(r.marshalJSON())
 }
 
-func (r *responseBuilder) SetData(d interface{}) ResponseBuilder {
-	r.Data = d
+func (r *responseBuilder) Data(d interface{}) ResponseBuilder {
+	r.data = d
 	return r
 }
 
-func (r *responseBuilder) SetStatus(s int) ResponseBuilder {
-	r.Status = s
+func (r *responseBuilder) Status(s int) ResponseBuilder {
+	r.status = s
 	return r
 }
 
 func (r *responseBuilder) Build() Response {
 
-	status := Status{StatusCode: r.Status, Message: http.StatusText(r.Status)}
-	return Response{Status: status, Data: r.Data}
+	status := Status{StatusCode: r.status, Message: http.StatusText(r.status)}
+	return Response{Status: status, Data: r.data, Timestamp: time.Now().Unix()}
 }
