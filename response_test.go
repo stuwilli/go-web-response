@@ -97,3 +97,35 @@ func TestResponseBuilder_ErrorsWithError(t *testing.T) {
 	r.WriteJSON(w)
 	w.Assert(500, expected)
 }
+
+func TestResponseBuilder_NewResponseData(t *testing.T) {
+
+	type Test struct {
+		Prop string
+	}
+
+	data := Test{Prop: "Hi"}
+
+	r := NewResponse(200, data, nil)
+	r.Timestamp = 1
+
+	expected := `{"statusCode":200,"message":"OK","timestamp":1,"data":{"Prop":"Hi"}}`
+
+	w := fakeresponse.NewFakeResponse(t)
+
+	r.WriteJSON(w)
+	w.Assert(200, expected)
+}
+
+func TestResponseBuilder_NewResponseError(t *testing.T) {
+
+	r := NewResponse(500, nil, errors.New("An error"))
+	r.Timestamp = 1
+
+	expected := `{"statusCode":500,"message":"Internal Server Error","timestamp":1,"errors":{"error_1":"An error"}}`
+
+	w := fakeresponse.NewFakeResponse(t)
+
+	r.WriteJSON(w)
+	w.Assert(500, expected)
+}
