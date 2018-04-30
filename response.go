@@ -127,7 +127,7 @@ func (r *responseBuilder) Build() Response {
 
 	status := Status{StatusCode: r.status, Message: http.StatusText(r.status)}
 	return Response{Status: status, Data: r.data, Errors: r.errors,
-		Timestamp: time.Now().Unix()}
+		Timestamp: makeTimestamp()}
 }
 
 //NewResponse legacy response building method
@@ -144,4 +144,8 @@ func NewResponse(status int, data interface{}, err error) Response {
 	}
 
 	return b.Build()
+}
+
+func makeTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
